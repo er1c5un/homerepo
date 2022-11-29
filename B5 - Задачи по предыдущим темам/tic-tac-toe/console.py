@@ -54,7 +54,7 @@ def check_diagonal(field: list) -> bool:
     line1 = field[0]
     line2 = field[1]
     line3 = field[2]
-    if line2[0] and (line1[0] == line2[1] == line3[2] or line1[2] == line2[1] == line3[0]):
+    if line2[1] and (line1[0] == line2[1] == line3[2] or line1[2] == line2[1] == line3[0]):
         return True
     else:
         return False
