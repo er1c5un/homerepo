@@ -186,7 +186,7 @@ f1 = pygame.font.SysFont('arial', 24)
 
 # инициализация матрицы игрового поля
 field: list = [['', '', ''] for _ in range(3)]
-
+clock = pygame.time.Clock()
 pygame.display.flip()
 
 # переменная для цикла игры
@@ -243,5 +243,6 @@ while mainloop:
                 restart(screen, f1)
 
     pygame.display.update()
+    clock.tick(30)
 
 pygame.quit()
