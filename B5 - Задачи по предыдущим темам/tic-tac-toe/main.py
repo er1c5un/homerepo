@@ -185,13 +185,18 @@ screen.fill(GREEN)
 f1 = pygame.font.SysFont('arial', 24)
 
 # инициализация матрицы игрового поля
-field = [['', '', ''] for _ in range(3)]
+field: list = [['', '', ''] for _ in range(3)]
 
 pygame.display.flip()
-# Цикл игры
+
+# переменная для цикла игры
 mainloop = True
-player = 1
-BOT = 0
+
+# переменная для хода игрока
+player: int = 1
+
+# переменная для хода компа
+BOT: int = 0
 restart(screen, f1)
 
 game_over = False
