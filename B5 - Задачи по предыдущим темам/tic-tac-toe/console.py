@@ -3,7 +3,7 @@ def print_field(f: object):
     Функция выводит на экран игровое поле
     :param f: матрица игрового поля
     """
-    print('   ', 0, 1, 2, ' (х)')
+    print('   ', 0, 1, 2, ' (y)')
     for i in range(3):
         print('', i, end='  ')
         for j in range(3):
@@ -15,7 +15,7 @@ def print_field(f: object):
                 sign = '-'
             print(sign, end=' ')
         print()
-    print('(y)')
+    print('(x)')
 
 
 def check_lines(field: list) -> bool:
