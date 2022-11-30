@@ -1,78 +1,78 @@
-def print_field(f: object):
+def print_field(fld: object):
     """
     Функция выводит на экран игровое поле
-    :param f: матрица игрового поля
+    :param fld: матрица игрового поля
     """
     print('   ', 0, 1, 2, ' (y)')
     for i in range(3):
         print('', i, end='  ')
         for j in range(3):
-            if f[i][j] == 1:
-                sign = 'X'
-            elif f[i][j] == 0:
-                sign = 'O'
+            if fld[i][j] == 1:
+                label = 'X'
+            elif fld[i][j] == 0:
+                label = 'O'
             else:
-                sign = '-'
-            print(sign, end=' ')
+                label = '-'
+            print(label, end=' ')
         print()
     print('(x)')
 
 
-def check_lines(field: list) -> bool:
+def check_lines(fld: list) -> bool:
     """
     Проверяет, есть ли зачеркнутые строки в игровом поле
-    :param field: матрица игрового поля
+    :param fld: матрица игрового поля
     :return: bool - зачеркивается линия или нет
     """
-    for line in field:
+    for line in fld:
         if line[0] and line[0] == line[1] == line[2]:
             return True
     return False
 
 
-def check_columns(field: list) -> bool:
+def check_columns(fld: list) -> bool:
     """
     Проверяет, есть ли зачеркнутые столбца в игровом поле
-    :param field: матрица игрового поля
+    :param fld: матрица игрового поля
     :return: bool
     """
-    line1 = field[0]
-    line2 = field[1]
-    line3 = field[2]
+    line1 = fld[0]
+    line2 = fld[1]
+    line3 = fld[2]
     for i in range(3):
         if line1[i] and line1[i] == line2[i] == line3[i]:
             return True
     return False
 
 
-def check_diagonal(field: list) -> bool:
+def check_diagonal(fld: list) -> bool:
     """
     Проверяет, есть ли зачеркнутые диагонали в игровом поле
-    :param field: матрица игрового поля
+    :param fld: матрица игрового поля
     :return:
     """
-    line1 = field[0]
-    line2 = field[1]
-    line3 = field[2]
+    line1 = fld[0]
+    line2 = fld[1]
+    line3 = fld[2]
     if line2[1] and (line1[0] == line2[1] == line3[2] or line1[2] == line2[1] == line3[0]):
         return True
     else:
         return False
 
 
-def is_win(field: list) -> bool:
+def is_win(fld: list) -> bool:
     """
     Проверяет, выиграл ли игрок
-    :param field: матрица игрового поля
+    :param fld: матрица игрового поля
     :return:
     """
-    lines_result = check_lines(field)
+    lines_result = check_lines(fld)
     if lines_result:
         return True
-    columns_result = check_columns(field)
+    columns_result = check_columns(fld)
     if columns_result:
         return True
-    diagonal_result = check_diagonal(field)
+    diagonal_result = check_diagonal(fld)
     if diagonal_result:
         return True
     return False

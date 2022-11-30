@@ -31,7 +31,7 @@ def draw_cross(scr: object, item: tuple) -> None:
 
 def draw_item(scr: object, item: tuple, item_type: int) -> None:
     """
-
+    Рисует либо крестик, либо нолик, в зависимости от типа
     :param scr: экран pygame (Surface)
     :param item: кортеж с номером клетки игрового поля
     :param item_type: 1 - игрок, 0 - компьютер
