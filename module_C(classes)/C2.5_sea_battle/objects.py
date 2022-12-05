@@ -1,7 +1,12 @@
+import random
+
 EMPTY = 0
 SHIP = 1
-SHOTTED_MISS = 2
-SHOTTED_HIT = 3
+NEAR_SHIP = 2
+SHOTTED_MISS = 3
+SHOTTED_HIT = 4
+HORIZONTAL = 0
+VERTICAL = 1
 
 
 class Ship:
@@ -25,9 +30,9 @@ class Board:
 
     def __init__(self, hide):
         self.board_matrix = [[Cell(i, j) for i in range(6)] for j in range(6)]
-        self.three_deck_count = 0
-        self.two_deck_count = 0
-        self.one_deck_count = 0
+        self.three_deck_count = 1
+        self.two_deck_count = 2
+        self.one_deck_count = 3
         self.hide = hide
 
     def draw(self):
@@ -49,8 +54,16 @@ class Board:
                 print(label, ' | ', end='')
             print()
 
-    def place_ship(self):
-        pass
+    def place_ship(self, ship):
+        x = ship.head_xy[0]
+        y = ship.head_xy[1]
+        self.board_matrix[x][y].state = SHIP
+        for i in range(1, ship.length):
+            if ship.orientation == HORIZONTAL:
+                self.board_matrix[x + i][y].state = SHIP
+            else:
+                self.board_matrix[x][y + i].state = SHIP
+
 
     def make_contour(self):
         pass
@@ -96,6 +109,8 @@ class Game:
         self.user_board = user_board
         self.ai = ai
         self.ai_board = ai_board
+        self.user_ships = []
+        self.ai_ships = []
 
     def draw_boards(self):
         print('        Мое поле                          Поле компьютера')
@@ -106,7 +121,7 @@ class Game:
                 if self.user_board.board_matrix[i][j].state == EMPTY:
                     label = chr(8413)
                 elif self.user_board.board_matrix[i][j].state == SHIP:
-                    if self.hide:
+                    if self.user_board.hide:
                         label = chr(8413)
                     else:
                         label = chr(8419)
@@ -121,7 +136,7 @@ class Game:
                 if self.ai_board.board_matrix[i][j].state == EMPTY:
                     label = chr(8413)
                 elif self.ai_board.board_matrix[i][j].state == SHIP:
-                    if self.hide:
+                    if self.ai_board.hide:
                         label = chr(8413)
                     else:
                         label = chr(8419)
@@ -133,7 +148,21 @@ class Game:
             print()
 
     def place_ships(self):
-        pass
+        while True:
+            for i in range(self.user_board.three_deck_count):
+                orient = random.randint(0, 1)
+                if orient:
+                    x = random.randint(0, 5)
+                    y = random.randint(0, 3)
+                    self.user_ships.append(Ship(3, (x, y), orient=VERTICAL))
+                else:
+                    x = random.randint(0, 3)
+                    y = random.randint(0, 5)
+                    self.user_ships.append(Ship(3, (x, y), orient=HORIZONTAL))
+            for ship in self.user_ships:
+                self.user_board.place_ship(ship)
+
+
 
     def hello(self):
         pass
@@ -151,4 +180,5 @@ player = User(name='Игрок')
 ai = AI(name='Компьютер')
 #my_board.draw()
 game = Game(player, my_board, ai, ai_board)
+game.place_ships()
 game.draw_boards()
