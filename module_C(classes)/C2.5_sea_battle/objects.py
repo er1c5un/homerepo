@@ -139,6 +139,36 @@ class AI(Player):
         pass
 
 
+def place_ship(deck, count, board, ship_list):
+    for i in range(count):
+        count_tries = 0
+        while True:
+            try:
+                orient = random.randint(0, 1)
+                if orient:
+                    x = random.randint(0, 5 - (deck - 1))
+                    y = random.randint(0, 5)
+                    ship = Ship(deck, (x, y), orient=VERTICAL)
+                    board.place_ship(ship)
+                    ship_list.append(ship)
+                    break
+                else:
+                    x = random.randint(0, 5)
+                    y = random.randint(0, 5 - (deck - 1))
+                    ship = Ship(deck, (x, y), orient=HORIZONTAL)
+                    board.place_ship(ship)
+                    ship_list.append(ship)
+                    break
+            except ValueError as e:
+                print(f"Корабль не может быть размещен, попытка {count_tries}")
+                print(f"Error: {e}")
+            if count_tries > 1000:
+                raise ValueError("Не вышло инициализировать доску, доска неудачна")
+                break
+            else:
+                count_tries += 1
+    #return ship_list
+
 class Game:
     def __init__(self, user, user_board, ai, ai_board):
         self.user = user
@@ -165,7 +195,7 @@ class Game:
                     if self.user_board.hide:
                         label = chr(8413)
                     else:
-                        label = chr(8413)  # chr(8416)
+                        label = chr(8413)#chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -181,6 +211,11 @@ class Game:
                         label = chr(8413)
                     else:
                         label = chr(8419)
+                elif self.ai_board.board_matrix[i][j].state == NEAR_SHIP:
+                    if self.ai_board.hide:
+                        label = chr(8413)
+                    else:
+                        label = chr(8413)#chr(8416)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -190,42 +225,13 @@ class Game:
 
     def place_ships(self, brd: Board, usr: Player):
         if isinstance(usr, User):
-            self.place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.user_ships)
-            self.place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.user_ships)
-            self.place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.user_ships)
+            place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.user_ships)
+            place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.user_ships)
+            place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.user_ships)
         else:
-            self.place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.ai_ships)
-            self.place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.ai_ships)
-            self.place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.ai_ships)
-
-    def place_ship(self, deck, count, board, ship_list):
-        for i in range(count):
-            count_tries = 0
-            while True:
-                try:
-                    orient = random.randint(0, 1)
-                    if orient:
-                        x = random.randint(0, 5 - (deck - 1))
-                        y = random.randint(0, 5)
-                        ship = Ship(deck, (x, y), orient=VERTICAL)
-                        board.place_ship(ship)
-                        ship_list.append(ship)
-                        break
-                    else:
-                        x = random.randint(0, 5)
-                        y = random.randint(0, 5 - (deck - 1))
-                        ship = Ship(deck, (x, y), orient=HORIZONTAL)
-                        board.place_ship(ship)
-                        ship_list.append(ship)
-                        break
-                except ValueError as e:
-                    print(f"Корабль не может быть размещен, попытка {count_tries}")
-                    print(f"Error: {e}")
-                if count_tries > 1000:
-                    raise ValueError("Не вышло инициализировать доску, доска неудачна")
-                    break
-                else:
-                    count_tries += 1
+            place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.ai_ships)
+            place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.ai_ships)
+            place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.ai_ships)
 
     def hello(self):
         pass
