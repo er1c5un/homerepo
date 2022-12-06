@@ -232,13 +232,23 @@ class Game:
     def start(self):
         pass
 
-
-my_board = Board(hide=False)
-ai_board = Board(hide=True)
-player = User(name='Игрок')
-ai = AI(name='Компьютер')
-# my_board.draw()
-game = Game(player, my_board, ai, ai_board)
-game.place_ships()
+count_of_tries = 0
+while True:
+    try:
+        my_board = Board(hide=False)
+        ai_board = Board(hide=True)
+        player = User(name='Игрок')
+        ai = AI(name='Компьютер')
+        # my_board.draw()
+        game = Game(player, my_board, ai, ai_board)
+        game.place_ships()
+        break
+    except ValueError as ve:
+        print('Не удалось расставить корабли, пробуем еще.')
+    if count_of_tries > 10:
+        raise ValueError('Не удалось проинициализровать доску, 1000 попыток')
+        break
+    else:
+        count_of_tries += 1
 game.draw_boards()
 print("END")
