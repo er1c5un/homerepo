@@ -61,16 +61,20 @@ class Board:
                     try:
                         x = new_ship.head_xy[0] + i
                         y = new_ship.head_xy[1] + j
-                        if self.board_matrix[x][y].state == EMPTY:
-                            self.board_matrix[x][y].state = NEAR_SHIP
+                        if x >= 0 and y >= 0:
+                            if self.board_matrix[x][y].state == EMPTY:
+                                self.board_matrix[x][y].state = NEAR_SHIP
                     except IndexError as ie:
                         pass
         else:
             for i in range(-1,  2):
                 for j in range(-1, new_ship.length + 1):
                     try:
-                        if self.board_matrix[new_ship.head_xy[0] + i][new_ship.head_xy[1] + j].state == EMPTY:
-                            self.board_matrix[new_ship.head_xy[0] + i][new_ship.head_xy[1] + j].state == NEAR_SHIP
+                        x = new_ship.head_xy[0] + i
+                        y = new_ship.head_xy[1] + j
+                        if x >= 0 and y >= 0:
+                            if self.board_matrix[x][y].state == EMPTY:
+                                self.board_matrix[x][y].state = NEAR_SHIP
                     except IndexError as ie:
                         pass
 
@@ -79,11 +83,15 @@ class Board:
         y = ship.head_xy[1]
         if self.board_matrix[x][y].state == EMPTY:
             if ship.orientation == HORIZONTAL:
+                print("HORIZONTAL SHIP")
                 for i in range(1, ship.length):
+                    print(f"x {x}, y {y}, i {i}")
                     if self.board_matrix[x][y + i].state != EMPTY:
-                        raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
+                        raise ValueError(f"Корабль не может быть размещен, клетка {x} {y + i} занята")
             else:
+                print("VERTICAL SHIP")
                 for i in range(1, ship.length):
+                    print(f"x {x}, i {i}, y {y}")
                     if self.board_matrix[x + i][y].state != EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
             self.board_matrix[x][y].state = SHIP
@@ -186,17 +194,17 @@ class Game:
             count_tries = 0
             while True:
                 try:
-                    orient = 1#random.randint(0, 1)
+                    orient = random.randint(0, 1)
                     if orient:
-                        x = 1#random.randint(0, 5)
-                        y = 1#random.randint(0, 3)
+                        x = random.randint(0, 3)
+                        y = random.randint(0, 5)
                         ship = Ship(3, (x, y), orient=VERTICAL)
                         self.user_board.place_ship(ship)
                         self.user_ships.append(ship)
                         break
                     else:
-                        x = random.randint(0, 3)
-                        y = random.randint(0, 5)
+                        x = random.randint(0, 5)
+                        y = random.randint(0, 3)
                         ship = Ship(3, (x, y), orient=HORIZONTAL)
                         self.user_board.place_ship(ship)
                         self.user_ships.append(ship)
