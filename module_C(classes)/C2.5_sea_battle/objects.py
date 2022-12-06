@@ -166,7 +166,7 @@ class Game:
                     if self.user_board.hide:
                         label = chr(8413)
                     else:
-                        label = chr(8416)
+                        label = chr(8413)#chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -190,29 +190,34 @@ class Game:
             print()
 
     def place_ships(self):
-        for i in range(self.user_board.three_deck_count):
+        self.place_ship(3, self.user_board.three_deck_count)
+        self.place_ship(2, self.user_board.two_deck_count)
+        self.place_ship(1, self.user_board.one_deck_count)
+
+    def place_ship(self, deck, count):
+        for i in range(count):
             count_tries = 0
             while True:
                 try:
                     orient = random.randint(0, 1)
                     if orient:
-                        x = random.randint(0, 3)
+                        x = random.randint(0, 5 - (deck - 1))
                         y = random.randint(0, 5)
-                        ship = Ship(3, (x, y), orient=VERTICAL)
+                        ship = Ship(deck, (x, y), orient=VERTICAL)
                         self.user_board.place_ship(ship)
                         self.user_ships.append(ship)
                         break
                     else:
                         x = random.randint(0, 5)
-                        y = random.randint(0, 3)
-                        ship = Ship(3, (x, y), orient=HORIZONTAL)
+                        y = random.randint(0, 5 - (deck - 1))
+                        ship = Ship(deck, (x, y), orient=HORIZONTAL)
                         self.user_board.place_ship(ship)
                         self.user_ships.append(ship)
                         break
                 except ValueError as e:
                     print(f"Корабль не может быть размещен, попытка {count_tries}")
                     print(f"Error: {e}")
-                if count_tries > 100:
+                if count_tries > 1000:
                     raise ValueError("Не вышло инициализировать доску, доска неудачна")
                     break
                 else:
