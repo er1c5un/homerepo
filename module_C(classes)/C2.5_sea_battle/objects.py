@@ -54,19 +54,48 @@ class Board:
                 print(label, ' | ', end='')
             print()
 
+    def make_contour(self, new_ship):
+        if new_ship.orientation == VERTICAL:
+            for i in range(-1, new_ship.length + 1):
+                for j in range(-1, 2):
+                    try:
+                        x = new_ship.head_xy[0] + i
+                        y = new_ship.head_xy[1] + j
+                        if self.board_matrix[x][y].state == EMPTY:
+                            self.board_matrix[x][y].state = NEAR_SHIP
+                    except IndexError as ie:
+                        pass
+        else:
+            for i in range(-1,  2):
+                for j in range(-1, new_ship.length + 1):
+                    try:
+                        if self.board_matrix[new_ship.head_xy[0] + i][new_ship.head_xy[1] + j].state == EMPTY:
+                            self.board_matrix[new_ship.head_xy[0] + i][new_ship.head_xy[1] + j].state == NEAR_SHIP
+                    except IndexError as ie:
+                        pass
+
     def place_ship(self, ship):
         x = ship.head_xy[0]
         y = ship.head_xy[1]
-        self.board_matrix[x][y].state = SHIP
-        for i in range(1, ship.length):
+        if self.board_matrix[x][y].state == EMPTY:
             if ship.orientation == HORIZONTAL:
-                self.board_matrix[x + i][y].state = SHIP
+                for i in range(1, ship.length):
+                    if self.board_matrix[x][y + i].state != EMPTY:
+                        raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
             else:
-                self.board_matrix[x][y + i].state = SHIP
+                for i in range(1, ship.length):
+                    if self.board_matrix[x + i][y].state != EMPTY:
+                        raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
+            self.board_matrix[x][y].state = SHIP
+            for i in range(1, ship.length):
+                if ship.orientation == HORIZONTAL:
+                    self.board_matrix[x][y + i].state = SHIP
+                else:
+                    self.board_matrix[x + i][y].state = SHIP
+        else:
+            raise ValueError(f"Корабль не может быть размещен, клетка носа {x} {y} корабля занята")
+        self.make_contour(ship)
 
-
-    def make_contour(self):
-        pass
 
     def shot(self):
         pass
@@ -125,6 +154,11 @@ class Game:
                         label = chr(8413)
                     else:
                         label = chr(8419)
+                elif self.user_board.board_matrix[i][j].state == NEAR_SHIP:
+                    if self.user_board.hide:
+                        label = chr(8413)
+                    else:
+                        label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -148,21 +182,33 @@ class Game:
             print()
 
     def place_ships(self):
-        while True:
-            for i in range(self.user_board.three_deck_count):
-                orient = random.randint(0, 1)
-                if orient:
-                    x = random.randint(0, 5)
-                    y = random.randint(0, 3)
-                    self.user_ships.append(Ship(3, (x, y), orient=VERTICAL))
+        for i in range(self.user_board.three_deck_count):
+            count_tries = 0
+            while True:
+                try:
+                    orient = 1#random.randint(0, 1)
+                    if orient:
+                        x = 1#random.randint(0, 5)
+                        y = 1#random.randint(0, 3)
+                        ship = Ship(3, (x, y), orient=VERTICAL)
+                        self.user_board.place_ship(ship)
+                        self.user_ships.append(ship)
+                        break
+                    else:
+                        x = random.randint(0, 3)
+                        y = random.randint(0, 5)
+                        ship = Ship(3, (x, y), orient=HORIZONTAL)
+                        self.user_board.place_ship(ship)
+                        self.user_ships.append(ship)
+                        break
+                except ValueError as e:
+                    print(f"Корабль не может быть размещен, попытка {count_tries}")
+                    print(f"Error: {e}")
+                if count_tries > 100:
+                    raise ValueError("Не вышло инициализировать доску, доска неудачна")
+                    break
                 else:
-                    x = random.randint(0, 3)
-                    y = random.randint(0, 5)
-                    self.user_ships.append(Ship(3, (x, y), orient=HORIZONTAL))
-            for ship in self.user_ships:
-                self.user_board.place_ship(ship)
-
-
+                    count_tries += 1
 
     def hello(self):
         pass
@@ -178,7 +224,8 @@ my_board = Board(hide=False)
 ai_board = Board(hide=True)
 player = User(name='Игрок')
 ai = AI(name='Компьютер')
-#my_board.draw()
+# my_board.draw()
 game = Game(player, my_board, ai, ai_board)
 game.place_ships()
 game.draw_boards()
+print("END")
