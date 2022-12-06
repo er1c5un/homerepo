@@ -67,7 +67,7 @@ class Board:
                     except IndexError as ie:
                         pass
         else:
-            for i in range(-1,  2):
+            for i in range(-1, 2):
                 for j in range(-1, new_ship.length + 1):
                     try:
                         x = new_ship.head_xy[0] + i
@@ -103,7 +103,6 @@ class Board:
         else:
             raise ValueError(f"Корабль не может быть размещен, клетка носа {x} {y} корабля занята")
         self.make_contour(ship)
-
 
     def shot(self):
         pass
@@ -166,7 +165,7 @@ class Game:
                     if self.user_board.hide:
                         label = chr(8413)
                     else:
-                        label = chr(8413)#chr(8416)
+                        label = chr(8413)  # chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -189,12 +188,17 @@ class Game:
                 print(label, ' | ', end='')
             print()
 
-    def place_ships(self):
-        self.place_ship(3, self.user_board.three_deck_count)
-        self.place_ship(2, self.user_board.two_deck_count)
-        self.place_ship(1, self.user_board.one_deck_count)
+    def place_ships(self, brd: Board, usr: Player):
+        if isinstance(usr, User):
+            self.place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.user_ships)
+            self.place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.user_ships)
+            self.place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.user_ships)
+        else:
+            self.place_ship(deck=3, count=brd.three_deck_count, board=brd, ship_list=self.ai_ships)
+            self.place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.ai_ships)
+            self.place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.ai_ships)
 
-    def place_ship(self, deck, count):
+    def place_ship(self, deck, count, board, ship_list):
         for i in range(count):
             count_tries = 0
             while True:
@@ -204,15 +208,15 @@ class Game:
                         x = random.randint(0, 5 - (deck - 1))
                         y = random.randint(0, 5)
                         ship = Ship(deck, (x, y), orient=VERTICAL)
-                        self.user_board.place_ship(ship)
-                        self.user_ships.append(ship)
+                        board.place_ship(ship)
+                        ship_list.append(ship)
                         break
                     else:
                         x = random.randint(0, 5)
                         y = random.randint(0, 5 - (deck - 1))
                         ship = Ship(deck, (x, y), orient=HORIZONTAL)
-                        self.user_board.place_ship(ship)
-                        self.user_ships.append(ship)
+                        board.place_ship(ship)
+                        ship_list.append(ship)
                         break
                 except ValueError as e:
                     print(f"Корабль не может быть размещен, попытка {count_tries}")
@@ -232,16 +236,18 @@ class Game:
     def start(self):
         pass
 
+
 count_of_tries = 0
 while True:
     try:
         my_board = Board(hide=False)
-        ai_board = Board(hide=True)
+        ai_board = Board(hide=False)
         player = User(name='Игрок')
         ai = AI(name='Компьютер')
         # my_board.draw()
         game = Game(player, my_board, ai, ai_board)
-        game.place_ships()
+        game.place_ships(my_board, player)
+        game.place_ships(ai_board, ai)
         break
     except ValueError as ve:
         print('Не удалось расставить корабли, пробуем еще.')
