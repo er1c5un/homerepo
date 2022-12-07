@@ -16,6 +16,12 @@ class Ship:
         self.head_xy = head_xy
         self.orientation = orient
         self.lives = length
+        self.is_alive = True
+
+    def ship_hitted(self):
+        self.lives -= 1
+        if self.lives == 0:
+            self.is_alive = False
 
 
 class Cell:
@@ -24,6 +30,7 @@ class Cell:
         self.state = EMPTY
         self.x = x
         self.y = y
+        self.ship_link = None  # ссылка на корабль, размещенный в данной клетке. Для удобства поиска корабля при стрельбе по клетке.
 
 
 class Board:
@@ -83,60 +90,96 @@ class Board:
         y = ship.head_xy[1]
         if self.board_matrix[x][y].state == EMPTY:
             if ship.orientation == HORIZONTAL:
-                print("HORIZONTAL SHIP")
+                # print("HORIZONTAL SHIP")
                 for i in range(1, ship.length):
-                    print(f"x {x}, y {y}, i {i}")
+                    # print(f"x {x}, y {y}, i {i}")
                     if self.board_matrix[x][y + i].state != EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x} {y + i} занята")
             else:
-                print("VERTICAL SHIP")
+                # print("VERTICAL SHIP")
                 for i in range(1, ship.length):
-                    print(f"x {x}, i {i}, y {y}")
+                    # print(f"x {x}, i {i}, y {y}")
                     if self.board_matrix[x + i][y].state != EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
             self.board_matrix[x][y].state = SHIP
+            self.board_matrix[x][
+                y].ship_link = ship  # размещаем у клетки ссылку на корабль, для более удобного поиска при выстрелах
             for i in range(1, ship.length):
                 if ship.orientation == HORIZONTAL:
                     self.board_matrix[x][y + i].state = SHIP
+                    self.board_matrix[x][y + i].ship_link = ship
                 else:
                     self.board_matrix[x + i][y].state = SHIP
+                    self.board_matrix[x + i][y].ship_link = ship
         else:
             raise ValueError(f"Корабль не может быть размещен, клетка носа {x} {y} корабля занята")
         self.make_contour(ship)
 
-    def shot(self):
-        pass
+    def shoot(self, x, y):
+        x = x - 1  # уменьшаем на 1, так как в списке значения с 0
+        y = y - 1
+        print("SHOOT METHOD ON BOARD CLASS")
+        if 0 <= x <= 5 and 0 <= y <= 5:
+            cell = self.board_matrix[x][y]
+            if cell.state == EMPTY or cell.state == NEAR_SHIP:
+                # если выстрелили в пустую клетку без кораблей
+                cell.state = SHOTTED_MISS
+                return False  # возвращаем False, чтобы передать ход другому игроку
+            elif cell.state == SHOTTED_MISS or cell.state == SHOTTED_HIT:
+                # если выстрелили в клетку, по которой уже ранее стреляли
+                raise ValueError("Вы сюда уже стреляли, введите другие координаты")
+            elif cell.state == SHIP:
+                cell.state = SHOTTED_HIT
+                # cell.ship_link.lives -= 1
+                cell.ship_link.ship_hitted()
+                return True  # возвращаем True, чтобы игрок ходил повторно
+        else:
+            raise ValueError("Невалидные координаты клетки. Должны быть в пределах [1, 6]")
 
 
 class Player:
 
-    def __init__(self, name):
+    def __init__(self, name, mine_board, enemy_board):
         self.name = name
-        self.mine_board = None
-        self.enemy_board = None
+        self.mine_board = mine_board
+        self.enemy_board = enemy_board
 
     def ask_move(self):
         pass
 
-    def shoot(self):
+    def player_shoot(self):
         pass
 
 
 class User(Player):
 
     def ask_move(self):
-        pass
+        aim = input("Ваш ход, куда стреляем? :")
+        x = int(aim[0])
+        y = int(aim[1])
+        return x, y
 
-    def shoot(self):
-        pass
+    def player_shoot(self):
+        while True:
+            try:
+                x, y = self.ask_move()
+                self.enemy_board.shoot(x, y)
+                break
+            except ValueError as e:
+                print(f"Невалидные координаты клетки: x = {x}, y = {y}")
 
 
 class AI(Player):
     def ask_move(self):
-        pass
+        # рандом от 1 до 6, так как потом вычитаем единицу
+        # сделано для того, чтобы пользователь выбирал клетки с 1 по 6
+        x = random.randint(1, 6)
+        y = random.randint(1, 6)
+        return x, y
 
-    def shoot(self):
-        pass
+    def player_shoot(self):
+        x, y = self.ask_move()
+        self.enemy_board.shoot(x, y)
 
 
 def place_ship(deck, count, board, ship_list):
@@ -160,14 +203,16 @@ def place_ship(deck, count, board, ship_list):
                     ship_list.append(ship)
                     break
             except ValueError as e:
-                print(f"Корабль не может быть размещен, попытка {count_tries}")
-                print(f"Error: {e}")
+                # print(f"Корабль не может быть размещен, попытка {count_tries}")
+                # print(f"Error: {e}")
+                pass
             if count_tries > 1000:
                 raise ValueError("Не вышло инициализировать доску, доска неудачна")
                 break
             else:
                 count_tries += 1
-    #return ship_list
+    # return ship_list
+
 
 class Game:
     def __init__(self, user, user_board, ai, ai_board):
@@ -195,7 +240,7 @@ class Game:
                     if self.user_board.hide:
                         label = chr(8413)
                     else:
-                        label = chr(8413)#chr(8416)
+                        label = chr(8413)  # chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -215,7 +260,7 @@ class Game:
                     if self.ai_board.hide:
                         label = chr(8413)
                     else:
-                        label = chr(8413)#chr(8416)
+                        label = chr(8413)  # chr(8416)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_HIT:
@@ -233,14 +278,48 @@ class Game:
             place_ship(deck=2, count=brd.two_deck_count, board=brd, ship_list=self.ai_ships)
             place_ship(deck=1, count=brd.one_deck_count, board=brd, ship_list=self.ai_ships)
 
+    def is_player_win(self, player_to_check):
+        all_ships_dead = True
+        if player_to_check == "User":
+            enemy_ships = self.ai_ships
+        else:
+            enemy_ships = self.user_ships
+        for ship in enemy_ships:
+            if ship.is_alive:
+                all_ships_dead = False
+        return all_ships_dead
+
+    def is_end_game(self):
+        # проверяем на победу юзера (подбиты ли все корабли бота)
+        if self.is_player_win(player_to_check="User"):
+            print("Вы победили!")
+            return True
+        # проверяем на победу бота (подбиты ли все корабли юзера)
+        elif self.is_player_win(player_to_check="AI"):
+            print("Вы проиграли...")
+            return True
+        else:
+            return False
+
     def hello(self):
         pass
 
     def game_loop(self):
-        pass
+        user_turn = True
+        while True:
+            if user_turn:
+                self.draw_boards()
+                user_turn = self.user.player_shoot()
+                if self.is_end_game():
+                    break
+            else:
+                user_turn = not self.ai.player_shoot()
+                if self.is_end_game():
+                    break
 
     def start(self):
-        pass
+        self.hello()
+        self.game_loop()
 
 
 count_of_tries = 0
@@ -248,19 +327,21 @@ while True:
     try:
         my_board = Board(hide=False)
         ai_board = Board(hide=False)
-        player = User(name='Игрок')
-        ai = AI(name='Компьютер')
+        player = User(name='Игрок', mine_board=my_board, enemy_board=ai_board)
+        ai = AI(name='Компьютер', mine_board=ai_board, enemy_board=my_board)
         # my_board.draw()
         game = Game(player, my_board, ai, ai_board)
         game.place_ships(my_board, player)
         game.place_ships(ai_board, ai)
         break
     except ValueError as ve:
-        print('Не удалось расставить корабли, пробуем еще.')
+        pass
+        # print('Не удалось расставить корабли, пробуем еще.')
     if count_of_tries > 10:
         raise ValueError('Не удалось проинициализровать доску, 1000 попыток')
         break
     else:
         count_of_tries += 1
-game.draw_boards()
+#game.draw_boards()
+game.start()
 print("END")
