@@ -1,13 +1,16 @@
 import os
 import random
+import enum
 
-EMPTY = 0
-SHIP = 1
-NEAR_SHIP = 2
-SHOTTED_MISS = 3
-SHOTTED_HIT = 4
-HORIZONTAL = 0
-VERTICAL = 1
+
+class State(enum.Enum):
+    EMPTY = 0
+    SHIP = 1
+    NEAR_SHIP = 2
+    SHOTTED_MISS = 3
+    SHOTTED_HIT = 4
+    HORIZONTAL = 0
+    VERTICAL = 1
 
 
 class Ship:
@@ -28,7 +31,7 @@ class Ship:
 class Cell:
 
     def __init__(self, x, y):
-        self.state = EMPTY
+        self.state = State.EMPTY
         self.x = x
         self.y = y
         self.ship_link = None  # ссылка на корабль, размещенный в данной клетке. Для удобства поиска корабля при стрельбе по клетке.
@@ -48,30 +51,30 @@ class Board:
         for i in range(6):
             print(i + 1, end=' | ')
             for j in range(6):
-                if self.board_matrix[i][j].state == EMPTY:
+                if self.board_matrix[i][j].state == State.EMPTY:
                     label = chr(8413)
-                elif self.board_matrix[i][j].state == SHIP:
+                elif self.board_matrix[i][j].state == State.SHIP:
                     if self.hide:
                         label = chr(8413)
                     else:
                         label = chr(8419)
-                elif self.board_matrix[i][j].state == SHOTTED_MISS:
+                elif self.board_matrix[i][j].state == State.SHOTTED_MISS:
                     label = chr(8416)
-                elif self.board_matrix[i][j].state == SHOTTED_HIT:
+                elif self.board_matrix[i][j].state == State.SHOTTED_HIT:
                     label = chr(8999)
                 print(label, ' | ', end='')
             print()
 
     def make_contour(self, new_ship):
-        if new_ship.orientation == VERTICAL:
+        if new_ship.orientation == State.VERTICAL:
             for i in range(-1, new_ship.length + 1):
                 for j in range(-1, 2):
                     try:
                         x = new_ship.head_xy[0] + i
                         y = new_ship.head_xy[1] + j
                         if x >= 0 and y >= 0:
-                            if self.board_matrix[x][y].state == EMPTY:
-                                self.board_matrix[x][y].state = NEAR_SHIP
+                            if self.board_matrix[x][y].state == State.EMPTY:
+                                self.board_matrix[x][y].state = State.NEAR_SHIP
                     except IndexError as ie:
                         pass
         else:
@@ -81,36 +84,36 @@ class Board:
                         x = new_ship.head_xy[0] + i
                         y = new_ship.head_xy[1] + j
                         if x >= 0 and y >= 0:
-                            if self.board_matrix[x][y].state == EMPTY:
-                                self.board_matrix[x][y].state = NEAR_SHIP
+                            if self.board_matrix[x][y].state == State.EMPTY:
+                                self.board_matrix[x][y].state = State.NEAR_SHIP
                     except IndexError as ie:
                         pass
 
     def place_ship(self, ship):
         x = ship.head_xy[0]
         y = ship.head_xy[1]
-        if self.board_matrix[x][y].state == EMPTY:
-            if ship.orientation == HORIZONTAL:
+        if self.board_matrix[x][y].state == State.EMPTY:
+            if ship.orientation == State.HORIZONTAL:
                 # print("HORIZONTAL SHIP")
                 for i in range(1, ship.length):
                     # print(f"x {x}, y {y}, i {i}")
-                    if self.board_matrix[x][y + i].state != EMPTY:
+                    if self.board_matrix[x][y + i].state != State.EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x} {y + i} занята")
             else:
                 # print("VERTICAL SHIP")
                 for i in range(1, ship.length):
                     # print(f"x {x}, i {i}, y {y}")
-                    if self.board_matrix[x + i][y].state != EMPTY:
+                    if self.board_matrix[x + i][y].state != State.EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
-            self.board_matrix[x][y].state = SHIP
+            self.board_matrix[x][y].state = State.SHIP
             self.board_matrix[x][
                 y].ship_link = ship  # размещаем у клетки ссылку на корабль, для более удобного поиска при выстрелах
             for i in range(1, ship.length):
-                if ship.orientation == HORIZONTAL:
-                    self.board_matrix[x][y + i].state = SHIP
+                if ship.orientation == State.HORIZONTAL:
+                    self.board_matrix[x][y + i].state = State.SHIP
                     self.board_matrix[x][y + i].ship_link = ship
                 else:
-                    self.board_matrix[x + i][y].state = SHIP
+                    self.board_matrix[x + i][y].state = State.SHIP
                     self.board_matrix[x + i][y].ship_link = ship
         else:
             raise ValueError(f"Корабль не может быть размещен, клетка носа {x} {y} корабля занята")
@@ -122,15 +125,15 @@ class Board:
         print("SHOOT METHOD ON BOARD CLASS")
         if 0 <= x <= 5 and 0 <= y <= 5:
             cell = self.board_matrix[x][y]
-            if cell.state == EMPTY or cell.state == NEAR_SHIP:
+            if cell.state == State.EMPTY or cell.state == State.NEAR_SHIP:
                 # если выстрелили в пустую клетку без кораблей
-                cell.state = SHOTTED_MISS
+                cell.state = State.SHOTTED_MISS
                 return False  # возвращаем False, чтобы передать ход другому игроку
-            elif cell.state == SHOTTED_MISS or cell.state == SHOTTED_HIT:
+            elif cell.state == State.SHOTTED_MISS or cell.state == State.SHOTTED_HIT:
                 # если выстрелили в клетку, по которой уже ранее стреляли
                 raise ValueError("Вы сюда уже стреляли, введите другие координаты")
-            elif cell.state == SHIP:
-                cell.state = SHOTTED_HIT
+            elif cell.state == State.SHIP:
+                cell.state = State.SHOTTED_HIT
                 # cell.ship_link.lives -= 1
                 cell.ship_link.ship_hitted()
                 return True  # возвращаем True, чтобы игрок ходил повторно
@@ -197,14 +200,14 @@ def place_ship(deck, count, board, ship_list):
                 if orient:
                     x = random.randint(0, 5 - (deck - 1))
                     y = random.randint(0, 5)
-                    ship = Ship(deck, (x, y), orient=VERTICAL)
+                    ship = Ship(deck, (x, y), orient=State.VERTICAL)
                     board.place_ship(ship)
                     ship_list.append(ship)
                     break
                 else:
                     x = random.randint(0, 5)
                     y = random.randint(0, 5 - (deck - 1))
-                    ship = Ship(deck, (x, y), orient=HORIZONTAL)
+                    ship = Ship(deck, (x, y), orient=State.HORIZONTAL)
                     board.place_ship(ship)
                     ship_list.append(ship)
                     break
@@ -236,7 +239,6 @@ class Game:
         self.user_ships = []
         self.ai_ships = []
 
-
     def count_alive_ships(self, ship_list, deck):
         count = 0
         for ship in ship_list:
@@ -245,67 +247,70 @@ class Game:
         return count
 
     def draw_boards(self):
-        #s.system('cls||clear')
+        # s.system('cls||clear')
         print('Мое поле                         Поле компьютера')
         print("Осталось кораблей:               Осталось кораблей:")
-        print("3-х палубных -", self.count_alive_ships(self.user_ships, 3), "                3-х палубных -", self.count_alive_ships(self.ai_ships, 3))
-        print("2-х палубных -", self.count_alive_ships(self.user_ships, 2), "                2-х палубных -", self.count_alive_ships(self.ai_ships, 2))
-        print("1-х палубных -", self.count_alive_ships(self.user_ships, 1), "                1-х палубных -", self.count_alive_ships(self.ai_ships, 1))
+        print("3-х палубных -", self.count_alive_ships(self.user_ships, 3), "                3-х палубных -",
+              self.count_alive_ships(self.ai_ships, 3))
+        print("2-х палубных -", self.count_alive_ships(self.user_ships, 2), "                2-х палубных -",
+              self.count_alive_ships(self.ai_ships, 2))
+        print("1-х палубных -", self.count_alive_ships(self.user_ships, 1), "                1-х палубных -",
+              self.count_alive_ships(self.ai_ships, 1))
 
         print()
         print('    1   2   3   4   5   6            1   2   3   4   5   6')
         for i in range(6):
             print(i + 1, end=' ')
             for j in range(6):
-                if self.user_board.board_matrix[i][j].state == EMPTY:
+                if self.user_board.board_matrix[i][j].state == State.EMPTY:
                     label = chr(8413)
                     print_cell(label=label, spaces=4)
-                elif self.user_board.board_matrix[i][j].state == SHIP:
+                elif self.user_board.board_matrix[i][j].state == State.SHIP:
                     if self.user_board.hide:
                         label = chr(8413)
                         print_cell(label=label, spaces=3)
                     else:
                         label = chr(9632)
                         print_cell(label=label, spaces=3)
-                elif self.user_board.board_matrix[i][j].state == NEAR_SHIP:
+                elif self.user_board.board_matrix[i][j].state == State.NEAR_SHIP:
                     if self.user_board.hide:
                         label = chr(8413)
                         print_cell(label=label, spaces=4)
                     else:
                         label = chr(8413)
                         print_cell(label=label, spaces=4)
-                elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
+                elif self.user_board.board_matrix[i][j].state == State.SHOTTED_MISS:
                     label = chr(8416)
                     print_cell(label=label, spaces=4)
-                elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
-                    label = chr(9746)#chr(8999)
+                elif self.user_board.board_matrix[i][j].state == State.SHOTTED_HIT:
+                    label = chr(9746)  # chr(8999)
                     print_cell(label=label, spaces=3)
 
             print('|     ', i + 1, end=' ')
 
             for j in range(6):
-                if self.ai_board.board_matrix[i][j].state == EMPTY:
+                if self.ai_board.board_matrix[i][j].state == State.EMPTY:
                     label = chr(8413)
                     print_cell(label=label, spaces=4)
-                elif self.ai_board.board_matrix[i][j].state == SHIP:
+                elif self.ai_board.board_matrix[i][j].state == State.SHIP:
                     if self.ai_board.hide:
                         label = chr(8413)
                         print_cell(label=label, spaces=4)
                     else:
                         label = chr(9632)
                         print_cell(label=label, spaces=3)
-                elif self.ai_board.board_matrix[i][j].state == NEAR_SHIP:
+                elif self.ai_board.board_matrix[i][j].state == State.NEAR_SHIP:
                     if self.ai_board.hide:
                         label = chr(8413)
                         print_cell(label=label, spaces=4)
                     else:
                         label = chr(8413)
-                        print_cell(label=label, spaces=4)# chr(8416)
-                elif self.ai_board.board_matrix[i][j].state == SHOTTED_MISS:
+                        print_cell(label=label, spaces=4)  # chr(8416)
+                elif self.ai_board.board_matrix[i][j].state == State.SHOTTED_MISS:
                     label = chr(8416)
                     print_cell(label=label, spaces=4)
-                elif self.ai_board.board_matrix[i][j].state == SHOTTED_HIT:
-                    label = chr(9746)#chr(8999)
+                elif self.ai_board.board_matrix[i][j].state == State.SHOTTED_HIT:
+                    label = chr(9746)  # chr(8999)
                     print_cell(label=label, spaces=3)
 
             print('|')
@@ -384,6 +389,6 @@ while True:
         break
     else:
         count_of_tries += 1
-#game.draw_boards()
+# game.draw_boards()
 game.start()
 print("END")
