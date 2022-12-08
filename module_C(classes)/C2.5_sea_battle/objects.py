@@ -1,3 +1,4 @@
+import os
 import random
 
 EMPTY = 0
@@ -178,8 +179,13 @@ class AI(Player):
         return x, y
 
     def player_shoot(self):
-        x, y = self.ask_move()
-        self.enemy_board.shoot(x, y)
+        while True:
+            try:
+                x, y = self.ask_move()
+                self.enemy_board.shoot(x, y)
+                break
+            except ValueError as e:
+                print(f"Невалидные координаты клетки: x = {x}, y = {y}")
 
 
 def place_ship(deck, count, board, ship_list):
@@ -214,6 +220,13 @@ def place_ship(deck, count, board, ship_list):
     # return ship_list
 
 
+def print_cell(label: str, spaces: int):
+    if spaces == 3:
+        print(f'|{label: ^3}', sep='', end='')
+    elif spaces == 4:
+        print(f'|{label: ^4}', sep='', end='')
+
+
 class Game:
     def __init__(self, user, user_board, ai, ai_board):
         self.user = user
@@ -223,50 +236,76 @@ class Game:
         self.user_ships = []
         self.ai_ships = []
 
+
+    def count_alive_ships(self, ship_list):
+        count = 0
+        for ship in ship_list:
+            if ship.is_alive:
+                count += 1
+        return count
+
     def draw_boards(self):
-        print('        Мое поле                          Поле компьютера')
-        print('    1   2   3   4   5   6             1   2   3   4   5   6')
+        #s.system('cls||clear')
+        print('Мое поле                         Поле компьютера')
+        print("Осталось кораблей:", self.count_alive_ships(self.user_ships), "            Осталось кораблей:", self.count_alive_ships(self.ai_ships))
+
+        print()
+        print('    1   2   3   4   5   6            1   2   3   4   5   6')
         for i in range(6):
-            print(i + 1, end=' | ')
+            print(i + 1, end=' ')
             for j in range(6):
                 if self.user_board.board_matrix[i][j].state == EMPTY:
                     label = chr(8413)
+                    print_cell(label=label, spaces=4)
                 elif self.user_board.board_matrix[i][j].state == SHIP:
                     if self.user_board.hide:
                         label = chr(8413)
+                        print_cell(label=label, spaces=3)
                     else:
-                        label = chr(8419)
+                        label = chr(9632)
+                        print_cell(label=label, spaces=3)
                 elif self.user_board.board_matrix[i][j].state == NEAR_SHIP:
                     if self.user_board.hide:
                         label = chr(8413)
+                        print_cell(label=label, spaces=4)
                     else:
-                        label = chr(8413)  # chr(8416)
+                        label = chr(8413)
+                        print_cell(label=label, spaces=4)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
+                    print_cell(label=label, spaces=4)
                 elif self.user_board.board_matrix[i][j].state == SHOTTED_HIT:
-                    label = chr(8999)
-                print(label, ' | ', end='')
-            print('     ', i + 1, end=' | ')
+                    label = chr(9746)#chr(8999)
+                    print_cell(label=label, spaces=3)
+
+            print('|     ', i + 1, end=' ')
 
             for j in range(6):
                 if self.ai_board.board_matrix[i][j].state == EMPTY:
                     label = chr(8413)
+                    print_cell(label=label, spaces=4)
                 elif self.ai_board.board_matrix[i][j].state == SHIP:
                     if self.ai_board.hide:
                         label = chr(8413)
+                        print_cell(label=label, spaces=4)
                     else:
-                        label = chr(8419)
+                        label = chr(9632)
+                        print_cell(label=label, spaces=3)
                 elif self.ai_board.board_matrix[i][j].state == NEAR_SHIP:
                     if self.ai_board.hide:
                         label = chr(8413)
+                        print_cell(label=label, spaces=4)
                     else:
-                        label = chr(8413)  # chr(8416)
+                        label = chr(8413)
+                        print_cell(label=label, spaces=4)# chr(8416)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_MISS:
                     label = chr(8416)
+                    print_cell(label=label, spaces=4)
                 elif self.ai_board.board_matrix[i][j].state == SHOTTED_HIT:
-                    label = chr(8999)
-                print(label, ' | ', end='')
-            print()
+                    label = chr(9746)#chr(8999)
+                    print_cell(label=label, spaces=3)
+
+            print('|')
 
     def place_ships(self, brd: Board, usr: Player):
         if isinstance(usr, User):
@@ -326,7 +365,7 @@ count_of_tries = 0
 while True:
     try:
         my_board = Board(hide=False)
-        ai_board = Board(hide=False)
+        ai_board = Board(hide=True)
         player = User(name='Игрок', mine_board=my_board, enemy_board=ai_board)
         ai = AI(name='Компьютер', mine_board=ai_board, enemy_board=my_board)
         # my_board.draw()
