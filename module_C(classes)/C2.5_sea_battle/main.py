@@ -13,7 +13,7 @@ while True:
         game.place_ships(my_board, player)
         game.place_ships(ai_board, ai)
         break
-    except ValueError as ve:
+    except ValueError:
         pass
 
     if count_of_tries > 10:
