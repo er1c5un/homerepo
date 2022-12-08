@@ -237,17 +237,20 @@ class Game:
         self.ai_ships = []
 
 
-    def count_alive_ships(self, ship_list):
+    def count_alive_ships(self, ship_list, deck):
         count = 0
         for ship in ship_list:
-            if ship.is_alive:
+            if ship.is_alive and ship.length == deck:
                 count += 1
         return count
 
     def draw_boards(self):
         #s.system('cls||clear')
         print('Мое поле                         Поле компьютера')
-        print("Осталось кораблей:", self.count_alive_ships(self.user_ships), "            Осталось кораблей:", self.count_alive_ships(self.ai_ships))
+        print("Осталось кораблей:               Осталось кораблей:")
+        print("3-х палубных -", self.count_alive_ships(self.user_ships, 3), "                3-х палубных -", self.count_alive_ships(self.ai_ships, 3))
+        print("2-х палубных -", self.count_alive_ships(self.user_ships, 2), "                2-х палубных -", self.count_alive_ships(self.ai_ships, 2))
+        print("1-х палубных -", self.count_alive_ships(self.user_ships, 1), "                1-х палубных -", self.count_alive_ships(self.ai_ships, 1))
 
         print()
         print('    1   2   3   4   5   6            1   2   3   4   5   6')
