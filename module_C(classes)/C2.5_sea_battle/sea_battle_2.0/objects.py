@@ -1,6 +1,13 @@
 import os
 import random
 import enum
+import pygame
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 
 
 class State(enum.Enum):
@@ -112,7 +119,8 @@ class Board:
                     if cells[x + i][y].state != State.EMPTY:
                         raise ValueError(f"Корабль не может быть размещен, клетка {x + i} {y} занята")
             cells[x][y].state = State.SHIP
-            cells[x][y].ship_link = ship  # размещаем у клетки ссылку на корабль, для более удобного поиска при выстрелах
+            cells[x][
+                y].ship_link = ship  # размещаем у клетки ссылку на корабль, для более удобного поиска при выстрелах
             for i in range(1, ship.length):
                 if ship.orientation == State.HORIZONTAL:
                     cells[x][y + i].state = State.SHIP
@@ -122,6 +130,7 @@ class Board:
                     cells[x + i][y].ship_link = ship
         else:
             raise ValueError(f"Корабль не может быть размещен, клетка носа {x} {y} корабля занята")
+        # после размещения корабля пометим соседние клетки как занятые
         self.make_contour(ship)
 
     def shoot(self, x: int, y: int):
@@ -169,27 +178,22 @@ class Player:
 
 class User(Player):
 
-    def ask_move(self) -> tuple:
+    def ask_move(self, x=0, y=0, grid_x=0, grid_y=0) -> tuple:
         """
-        Запрашивает координаты выстрела
+        Переводит координаты мыши в номер клетки
         :return: координаты выстрела, tuple (x,y)
         """
-        aim = input("Ваш ход, куда стреляем? :")
-        x = int(aim[0])
-        y = int(aim[1])
-        return x, y
+        y_cell = (x - grid_x) // 40 + 1
+        x_cell = (y - grid_y) // 40 + 1
+        return x_cell, y_cell
 
-    def player_shoot(self) -> bool:
+    def player_shoot(self, x=0, y=0, grid_x=0, grid_y=0) -> bool:
         """
         Ход игрока, делает выстрел по вражеской доске
         :return: True - игрок ходит еще раз, False - переход хода
         """
-        while True:
-            try:
-                x, y = self.ask_move()
-                return self.enemy_board.shoot(x, y)
-            except ValueError as e:
-                print(f"Невалидные координаты клетки: x = {x}, y = {y}")
+        x, y = self.ask_move(x, y, grid_x, grid_y)
+        return self.enemy_board.shoot(x, y)
 
 
 class AI(Player):
@@ -252,22 +256,37 @@ def place_ship(deck: int, count: int, board: Board, ship_list: list):
                 raise ValueError("Не вышло инициализировать доску, доска неудачна")
             else:
                 count_tries += 1
-    # return ship_list
 
 
-def print_cell(label: str, spaces: int):
+def draw_line(scr: object, a: tuple, b: tuple) -> None:
     """
-    Функция для форматированного вывода лейблов ячейки.
-    :param label: Символ вывода состояния ячейки
-    :param spaces: количество пробелов для равнения символа (некоторые символы юникода занимают больше места на экране)
+    Рисует линию для игрового поля
+    :param scr: экран pygame (Surface)
+    :param a: кортеж с координатами точки а
+    :param b: кортеж с координатами точки b
     """
-    if spaces == 3:
-        print(f'|{label: ^3}', sep='', end='')
-    elif spaces == 4:
-        print(f'|{label: ^4}', sep='', end='')
+    pygame.draw.line(scr, (0, 0, 0), a, b, 1)
+
+
+def draw_grid(scr: object, x: int, y: int, cell_width: int, cell_count: int):
+    """
+    Рисует сетку поля
+    :param scr: экран pygame (Surface)
+    :param x: координата x левого верхнего угла сетки
+    :param y: координата y левого верхнего угла сетки
+    :param cell_width: ширина клетки
+    :param cell_count: количество клеток
+    """
+    for i in range(cell_count + 1):
+        draw_line(scr, (x + i * cell_width, y), (x + i * cell_width, y + cell_width * cell_count))
+    for j in range(cell_count + 1):
+        draw_line(scr, (x, y + j * cell_width), (x + cell_width * cell_count, y + j * cell_width))
 
 
 class Game:
+    bot_grid_x = 360
+    bot_grid_y = 40
+
     def __init__(self, user: User, user_board: Board, ai: AI, ai_board: Board):
         """
         :param user: игрок
@@ -295,78 +314,75 @@ class Game:
                 count += 1
         return count
 
-    def draw_boards(self):
+    def draw_boards(self, scr: object, fnt: object):
         """
         Метод для отрисовки игровых полей
         """
-        # s.system('cls||clear') # закомментировал, так как при запуске из pyCharm очистка консоли не работает
-        print('Ваше поле                         Поле компьютера')
-        print("Осталось кораблей:               Осталось кораблей:")
-        print("3-х палубных -", self.count_alive_ships(self.user_ships, 3), "                3-х палубных -",
-              self.count_alive_ships(self.ai_ships, 3))
-        print("2-х палубных -", self.count_alive_ships(self.user_ships, 2), "                2-х палубных -",
-              self.count_alive_ships(self.ai_ships, 2))
-        print("1-х палубных -", self.count_alive_ships(self.user_ships, 1), "                1-х палубных -",
-              self.count_alive_ships(self.ai_ships, 1))
+        scr.fill(BLUE)
 
-        print()
-        print('    1   2   3   4   5   6            1   2   3   4   5   6')
+        your_board_txt = fnt.render("Ваше поле", False, BLACK)
+        scr.blit(your_board_txt, (40, 10))
+        bot_board_txt = fnt.render("Поле компьютера", False, BLACK)
+        scr.blit(bot_board_txt, (360, 10))
+
+        ships_left = fnt.render("Осталось кораблей", False, BLACK)
+        scr.blit(ships_left, (240, 300))
+        ships_left_3 = fnt.render(
+            f"{self.count_alive_ships(self.user_ships, 3)}        3-хпалубных        {self.count_alive_ships(self.ai_ships, 3)}",
+            False, BLACK)
+        scr.blit(ships_left_3, (210, 340))
+        ships_left_2 = fnt.render(
+            f"{self.count_alive_ships(self.user_ships, 2)}        2-хпалубных        {self.count_alive_ships(self.ai_ships, 2)}",
+            False, BLACK)
+        scr.blit(ships_left_2, (210, 380))
+        ships_left_1 = fnt.render(
+            f"{self.count_alive_ships(self.user_ships, 1)}        1-палубных          {self.count_alive_ships(self.ai_ships, 1)}",
+            False, BLACK)
+        scr.blit(ships_left_1, (210, 420))
+
+        # рисуем сетку своего поля
+        draw_grid(scr, x=40, y=40, cell_width=40, cell_count=6)
+
+        # рисуем сетку поля бота
+        draw_grid(scr, x=Game.bot_grid_x, y=Game.bot_grid_y, cell_width=40, cell_count=6)
+
         for i in range(6):
             print(i + 1, end=' ')
             for j in range(6):
                 user_cells = self.user_board.board_matrix
                 if user_cells[i][j].state == State.EMPTY:
-                    label = chr(8413)
-                    print_cell(label=label, spaces=4)
+                    label = fnt.render('', False, BLACK)
                 elif user_cells[i][j].state == State.SHIP:
                     if self.user_board.hide:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=3)
+                        label = fnt.render('', False, BLACK)
                     else:
-                        label = chr(9632)
-                        print_cell(label=label, spaces=3)
+                        label = fnt.render('D', False, BLACK)
                 elif user_cells[i][j].state == State.NEAR_SHIP:
-                    if self.user_board.hide:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=4)
-                    else:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=4)
+                    label = fnt.render('', False, BLACK)
                 elif user_cells[i][j].state == State.SHOTTED_MISS:
-                    label = chr(8416)
-                    print_cell(label=label, spaces=4)
+                    label = fnt.render(' *', False, BLACK)
                 elif user_cells[i][j].state == State.SHOTTED_HIT:
-                    label = chr(9746)
-                    print_cell(label=label, spaces=3)
+                    label = fnt.render('X', False, BLACK)
 
-            print('|     ', i + 1, end=' ')
+                scr.blit(label, (50 + j * 40, 50 + i * 40))
 
             for j in range(6):
                 ai_cells = self.ai_board.board_matrix
                 if ai_cells[i][j].state == State.EMPTY:
-                    label = chr(8413)
-                    print_cell(label=label, spaces=4)
+                    label = fnt.render('', False, BLACK)
                 elif ai_cells[i][j].state == State.SHIP:
                     if self.ai_board.hide:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=4)
+                        label = fnt.render('', False, BLACK)
                     else:
-                        label = chr(9632)
-                        print_cell(label=label, spaces=3)
+                        label = fnt.render('S', False, BLACK)
                 elif ai_cells[i][j].state == State.NEAR_SHIP:
-                    if self.ai_board.hide:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=4)
-                    else:
-                        label = chr(8413)
-                        print_cell(label=label, spaces=4)
+                    label = fnt.render('', False, BLACK)
                 elif ai_cells[i][j].state == State.SHOTTED_MISS:
-                    label = chr(8416)
-                    print_cell(label=label, spaces=4)
+                    label = fnt.render(' *', False, BLACK)
                 elif ai_cells[i][j].state == State.SHOTTED_HIT:
-                    label = chr(9746)
-                    print_cell(label=label, spaces=3)
-            print('|')
+                    label = fnt.render('X', False, BLACK)
+
+                scr.blit(label, (Game.bot_grid_x + 10 + j * 40, Game.bot_grid_y + 10 + i * 40))
 
     def place_ships(self, brd: Board, usr: Player):
         """
@@ -399,7 +415,7 @@ class Game:
                 all_ships_dead = False
         return all_ships_dead
 
-    def is_end_game(self) -> bool:
+    def is_end_game(self, scr, fnt) -> bool:
         """
         Метод для проверки, закончилась ли игра чьей-нибудь победой
         :return: True - игра окончена, False - игра не окончена
@@ -407,54 +423,53 @@ class Game:
         # проверяем на победу юзера (подбиты ли все корабли бота)
         if self.is_player_win(player_to_check="User"):
             print("Вы победили!")
+            you_win = fnt.render('Вы победили!', False, (0, 0, 0))
+            scr.blit(you_win, (250, 450))
             return True
         # проверяем на победу бота (подбиты ли все корабли юзера)
         elif self.is_player_win(player_to_check="AI"):
             print("Вы проиграли...")
+            you_loose = fnt.render('Вы проиграли!', False, (0, 0, 0))
+            scr.blit(you_loose, (250, 450))
             return True
         else:
             return False
 
-    def hello(self):
-        """
-        Выводит правила игры
-        """
-        print("="*10, "ИГРА МОРСКОЙ БОЙ", "="*10)
-        print()
-        print("="*10, "Правила", "="*10)
-        print("Вы играете против компьютера")
-        print("Количество кораблей:")
-        print("3-х палубных - 1")
-        print("2-х палубных - 2")
-        print("1-х палубных - 3")
-        print("Корабли размещаются случайным образом")
-        print("Корабль не может быть размещен на соседней клетке с другим кораблем")
-        print("Чтобы сделать выстрел, введите 2 числа без пробелов")
-        print("например так: 34, где 3 - номер строки, 4 - номер столбца клетки, куда хотим выстрелить")
-        print("=" * 35)
-        print("Удачи!")
-
-
-    def game_loop(self):
+    def game_loop(self, scr: object, fnt: object, clc: object):
         """
         Метод основного игрового цикла.
         По очереди делаем ходя игроков и проверяем на конец игры.
         """
         user_turn = True
-        while True:
-            if user_turn:
-                self.draw_boards()
-                user_turn = self.user.player_shoot()
-                if self.is_end_game():
-                    break
-            else:
-                user_turn = not self.ai.player_shoot()
-                if self.is_end_game():
-                    break
+        game_loop = True
+        self.draw_boards(scr, fnt)
+        while game_loop:
+            for event in pygame.event.get():
+                # проверить закрытие окна
+                if event.type == pygame.QUIT:
+                    game_loop = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and not self.is_end_game(scr, fnt):
+                    # если нажата мышка, берем позицию
+                    mouse_pos_x, mouse_pos_y = pygame.mouse.get_pos()
+                    # проверяем, что кликнули в область вражеского поля, иначе игнор
+                    if Game.bot_grid_x < mouse_pos_x < Game.bot_grid_x + 6 * 40 and \
+                            Game.bot_grid_y < mouse_pos_y < Game.bot_grid_y + 6 * 40:
+                        user_turn = self.user.player_shoot(mouse_pos_x, mouse_pos_y, Game.bot_grid_x,
+                                                           Game.bot_grid_y)
+                        self.draw_boards(scr, fnt)
+                        if self.is_end_game(scr, fnt):
+                            break
+                        # если больше не очередь юзера, то ходит бот, пока не промахнется
+                        while not user_turn:
+                            user_turn = not self.ai.player_shoot()
+                            self.draw_boards(scr, fnt)
+                            if self.is_end_game(scr, fnt):
+                                break
+            pygame.display.update()
+            clc.tick(30)
 
-    def start(self):
+    def start(self, scr: object, fnt: object, clc: object):
         """
         Метод для запуска игры
         """
-        self.hello()
-        self.game_loop()
+        self.game_loop(scr, fnt, clc)
