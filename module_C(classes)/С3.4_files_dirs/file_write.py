@@ -1,0 +1,10 @@
+f = open("temp.txt", "w", encoding='utf-8')
+f.write("Новая запись в файл\n")
+f.write("Вторая строка в файл")
+f.close()
+
+f = open("temp.txt", "r", encoding='utf-8')
+s10 = f.read(10)
+s_all = f.read()
+f.close()
+print("Прочитали из файла:", s10, s_all)
