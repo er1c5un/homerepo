@@ -45,6 +45,14 @@ class Queue:
         else:  # или если хвост стоит правее начала
             return self.tail - self.head
 
+    def show(self):
+        print(f'Задача №{self.tasks[self.head]} в приоритете')
+
+    def do(self):
+        print(f'Задача №{self.tasks[self.head]} выполнена')
+        self.tasks[self.head] = 0
+        self.head = (self.head + 1) % self.max_size
+
 
 # Используем класс
 size = int(input("Определите размер очереди: "))
