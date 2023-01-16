@@ -17,25 +17,30 @@ class APIException(ValueError):
 
 class ExchangeService:
 
-    def __init__(self, base_url=''):
+    def __init__(self, base_url: str = ''):
         base_url = base_url
 
     @staticmethod
-    def get_price(base=None, quote=None, amount=1):
+    def get_price(base: str = None, quote: str = None, amount: int = 1):
         base = base.upper()
         quote = quote.upper()
+        try:
+            amount = int(amount)
+        except ValueError:
+            raise ParametersErrorException(f'Упс, похоже количество валюты введено некорректно')
+
         if base not in codes and base not in additional_codes and base not in crypto_codes:
             raise NonExistingCurrencyException(f'Упс, я не знаю валюты {base}...')
         if quote not in codes and quote not in additional_codes and quote not in crypto_codes:
-            raise NonExistingCurrencyException(f'Упс, я не знаю валюты {base}...')
-        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base.upper()}&tsyms={quote.upper()}'
+            raise NonExistingCurrencyException(f'Упс, я не знаю валюты {quote}...')
+        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base}&tsyms={quote}'
         print(f'Converting {amount} {base} into {quote}')
         res = json.loads(requests.get(convert_url).content)
         if res.get('Response') != 'Error':
             print(res)
             print(f'Converting result = {res[quote] * int(amount)}')
             if amount == 1:
-                res = f'{additional_codes.get(base, crypto_codes.get(base))} равен {res[quote] * int(amount)} {quote}'
+                res = f'{additional_codes.get(base, crypto_codes.get(base))} равен {res[quote]} {quote}'
             else:
                 res = f'{amount} {base} это {res[quote] * int(amount)} {quote}'
             return res
@@ -47,7 +52,7 @@ class ExchangeService:
         base = base.upper()
         if base not in codes and base not in additional_codes and base not in crypto_codes:
             raise NonExistingCurrencyException(f'Упс, я не знаю валюты {base}...')
-        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base.upper()}&tsyms=RUB'
+        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base}&tsyms=RUB'
         print(f'Converting 1 {base} into RUB')
         res = json.loads(requests.get(convert_url).content)
         if res.get('Response') != 'Error':
@@ -56,7 +61,7 @@ class ExchangeService:
             return res
         else:
             raise APIException(
-                f'Упс, ошибка валютного сервиса. Валюта не найдена...\n{res.get("Message")}\nУказанная валюта не найдена')
+                f'Упс, ошибка валютного сервиса...\n{res.get("Message")}')
 
 
 if __name__ == '__main__':

@@ -1,11 +1,6 @@
-'''
-
-'''
-import json
-
 import telebot
 from config import TOKEN, codes, additional_codes, crypto_codes
-from api_service import ExchangeService, NonExistingCurrencyException, APIException
+from extensions import ExchangeService, NonExistingCurrencyException, ParametersErrorException, APIException
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -16,7 +11,11 @@ def hello_func(message):
            '<имя валюты> - вы получите ее текущий курс в рублях\n' \
            '<имя валюты> <в какую валюту перевести> - чтобы узнать курс пары\n' \
            '<имя валюты> <в какую валюту перевести> <количество> - чтобы сразу перевести определенную сумму\n\n' \
-           'Курсы криптовалют тоже доступны'
+           'Курсы криптовалют тоже доступны.\n\n' \
+           'Команды:\n' \
+           '/values - список основных валют\n' \
+           '/all_values - все валюты\n' \
+           '/crypto - список криптовалют'
     bot.reply_to(message, f"{message.from_user.first_name}, {text}")
 
 
@@ -27,12 +26,14 @@ def handle_values_cmd(message):
         text += '\n' + key + ' - ' + codes[key]
     bot.reply_to(message, text)
 
+
 @bot.message_handler(commands=['crypto'])
 def handle_values_cmd(message):
     text = 'Криптовалюты:'
     for key in crypto_codes.keys():
         text += '\n' + key + ' - ' + crypto_codes[key]
     bot.reply_to(message, text)
+
 
 @bot.message_handler(commands=['all_values'])
 def handle_values_cmd(message):
@@ -60,11 +61,15 @@ def convert(message):
             amount = message_list[2]
             result = api.get_price(base, quote, amount)
         else:
-            result = f'Упс, {message.from_user.first_name}, похоже, вы ввели некорректный запрос...'
+            raise ParametersErrorException(f'Упс, похоже, вы ввели слишком много параметров...')
     except NonExistingCurrencyException as e:
-        result = str(e)
+        result = e
+    except ParametersErrorException as e:
+        result = e
     except APIException as e:
-        result = str(e)
+        result = e
+    except Exception as e:
+        result = f'Не удалось обработать команду.\nОшибка:{str(e)}'
     bot.reply_to(message, result)
 
 
