@@ -33,9 +33,7 @@ class ExchangeService:
             raise NonExistingCurrencyException(f'Упс, я не знаю валюты {base}...')
         if quote not in codes and quote not in additional_codes and quote not in crypto_codes:
             raise NonExistingCurrencyException(f'Упс, я не знаю валюты {quote}...')
-        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base}&tsyms={quote}'
-        print(f'Converting {amount} {base} into {quote}')
-        res = json.loads(requests.get(convert_url).content)
+        res = ExchangeService.http_request(base, quote)
         if res.get('Response') != 'Error':
             print(res)
             print(f'Converting result = {res[quote] * int(amount)}')
@@ -50,11 +48,10 @@ class ExchangeService:
     @staticmethod
     def auto_convert_to_rub(base):
         base = base.upper()
+        quote = 'RUB'
         if base not in codes and base not in additional_codes and base not in crypto_codes:
             raise NonExistingCurrencyException(f'Упс, я не знаю валюты {base}...')
-        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base}&tsyms=RUB'
-        print(f'Converting 1 {base} into RUB')
-        res = json.loads(requests.get(convert_url).content)
+        res = ExchangeService.http_request(base, quote)
         if res.get('Response') != 'Error':
             print(f'Converting result = {res["RUB"]}')
             res = f'{additional_codes.get(base, crypto_codes.get(base))} равен {str(res["RUB"])} RUB'
@@ -62,6 +59,12 @@ class ExchangeService:
         else:
             raise APIException(
                 f'Упс, ошибка валютного сервиса...\n{res.get("Message")}')
+
+    @staticmethod
+    def http_request(base, quote):
+        convert_url = f'https://min-api.cryptocompare.com/data/price?fsym={base}&tsyms={quote}'
+        res = json.loads(requests.get(convert_url).content)
+        return res
 
 
 if __name__ == '__main__':
